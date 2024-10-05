@@ -1,7 +1,9 @@
 const { Sequelize, DataTypes } = require('sequelize');
+require('dotenv').config();
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USERNAME, process.env.DB_PASSWORD, {
     host: 'localhost',
-    dialect: 'postgres'
+    dialect: 'postgres',
+    logging: console.log // Enables logging of SQL queries
 });
 
 const User = sequelize.define('User', {

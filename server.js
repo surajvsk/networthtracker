@@ -10,17 +10,17 @@ const User = require('./models/user'); // Import your User model
 // Initialize Sequelize (ensure you replace 'database', 'username', 'password' with actual values)
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USERNAME, process.env.DB_PASSWORD, {
     host: 'localhost',
-    dialect: 'postgres' // Use the correct dialect for your DB
+    dialect: 'postgres', // Use the correct dialect for your DB
+    logging: console.log // Enables logging of SQL queries
 });
 
 const init = async () => {
-    // Sync Sequelize models
     try {
-        await sequelize.authenticate(); // Test database connection
+        await sequelize.authenticate();
         console.log('Connection has been established successfully.');
 
-        await sequelize.sync({ force: true }); // Synchronize models (force: true is for dev purposes)
-        console.log('Models synchronized with the database.');
+        await sequelize.sync({ force: false });
+        console.log('Tables synchronized');
 
         const server = Hapi.server({
             port: 3000,
@@ -42,21 +42,25 @@ const init = async () => {
             },
             handler: async (request, h) => {
                 const { username, password, email } = request.payload;
-
-                // Hash the password
                 const saltRounds = 10;
                 const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-                // Create new user in the database
-                const newUser = await User.create({ username, email, password: hashedPassword });
-
-                // Return response with the created user
-                return h.response({ message: 'User created successfully', user: newUser }).code(201);
+                try {
+                    const user = await User.create({ username, email, password: hashedPassword });
+                    return h.response({ message: 'User created successfully', user }).code(201);
+                } catch (error) {
+                    console.error('Error creating user:', error);
+                    if (error.name === 'SequelizeUniqueConstraintError') {
+                        return h.response({ message: 'Email already exists' }).code(409); // Conflict
+                    }
+                    return h.response({ message: 'Error creating user', error }).code(500);
+                }
             }
         });
 
         await server.start();
         console.log('Server running on %s', server.info.uri);
+        return server; // Return the server instance
     } catch (error) {
         console.error('Unable to connect to the database:', error);
     }
@@ -68,3 +72,4 @@ process.on('unhandledRejection', (err) => {
 });
 
 init();
+
