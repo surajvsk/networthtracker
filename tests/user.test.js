@@ -28,7 +28,7 @@ describe('POST /users', () => {
         };
 
         // Mock the User.create method
-        User.create.mockResolvedValue(mockUser);
+        User.create(mockUser);
 
         const response = await server.inject({
             method: 'POST',
@@ -47,7 +47,7 @@ describe('POST /users', () => {
 
     it('should return error when user creation fails', async () => {
         // Mock the User.create method to throw an error
-        User.create.mockRejectedValue(new Error('User creation failed'));
+        User.create(new Error('User creation failed'));
 
         const response = await server.inject({
             method: 'POST',
@@ -58,7 +58,7 @@ describe('POST /users', () => {
                 password: 'password123',
             },
         });
-
+        
         expect(response.statusCode).toBe(500);
         expect(response.result.message).toBe('Error creating user');
     });
