@@ -1,75 +1,110 @@
-// Import necessary modules
+// server.js
 const Hapi = require('@hapi/hapi');
-const Joi = require('@hapi/joi');
+const User = require('./models/user');
+const Joi = require('joi');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
-const { Sequelize } = require('sequelize');
-const User = require('./models/user'); // Import your User model
-
-// Initialize Sequelize (ensure you replace 'database', 'username', 'password' with actual values)
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USERNAME, process.env.DB_PASSWORD, {
-    host: 'localhost',
-    dialect: 'postgres', // Use the correct dialect for your DB
-    logging: console.log // Enables logging of SQL queries
-});
+const HapiAuthJwt2 = require('hapi-auth-jwt2');
+const { generateToken } = require('./utils');
+const config = require('./config');
 
 const init = async () => {
-    try {
-        await sequelize.authenticate();
-        console.log('Connection has been established successfully.');
+    const server = Hapi.server({
+        port: 3000,
+        host: 'localhost',
+    });
 
-        await sequelize.sync({ force: false });
-        console.log('Tables synchronized');
+    // Register JWT authentication
+    await server.register(HapiAuthJwt2);
 
-        const server = Hapi.server({
-            port: 3000,
-            host: 'localhost'
-        });
+    server.auth.strategy('jwt', 'jwt', {
+        key: config.jwtSecret,
+        validate: async (decoded) => {
+            // You can perform additional checks here
+            return { isValid: true };
+        },
+    });
 
-        // Define routes
-        server.route({
-            method: 'POST',
-            path: '/users',
-            options: {
-                validate: {
-                    payload: Joi.object({
-                        username: Joi.string().min(3).required(),
-                        password: Joi.string().min(6).required(),
-                        email: Joi.string().email().required()
-                    })
-                }
+    server.auth.default('jwt'); // Set the default authentication strategy
+
+    // Define routes
+    server.route({
+        method: 'POST',
+        path: '/users',
+        options: {
+            validate: {
+                payload: Joi.object({
+                    username: Joi.string().min(3).required(),
+                    password: Joi.string().min(6).required(),
+                    email: Joi.string().email().required(),
+                }),
             },
-            handler: async (request, h) => {
-                const { username, password, email } = request.payload;
-                const saltRounds = 10;
-                const hashedPassword = await bcrypt.hash(password, saltRounds);
+        },
+        handler: async (request, h) => {
+            const { username, password, email } = request.payload;
 
-                try {
-                    const user = await User.create({ username, email, password: hashedPassword });
-                    return h.response({ message: 'User created successfully', user }).code(201);
-                } catch (error) {
-                    console.error('Error creating user:', error);
-                    if (error.name === 'SequelizeUniqueConstraintError') {
-                        return h.response({ message: 'Email already exists' }).code(409); // Conflict
-                    }
-                    return h.response({ message: 'Error creating user', error }).code(500);
-                }
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+            try {
+                const user = await User.create({ username, email, password: hashedPassword });
+                return h.response({ message: 'User created successfully', user }).code(201);
+            } catch (error) {
+                return h.response({ message: 'Error creating user', error }).code(500);
             }
-        });
+        },
+    });
 
-        await server.start();
-        console.log('Server running on %s', server.info.uri);
-        return server; // Return the server instance
-    } catch (error) {
-        console.error('Unable to connect to the database:', error);
-    }
+    server.route({
+        method: 'POST',
+        path: '/login',
+        options: {
+            validate: {
+                payload: Joi.object({
+                    email: Joi.string().email().required(),
+                    password: Joi.string().min(6).required(),
+                }),
+            },
+        },
+        handler: async (request, h) => {
+            const { email, password } = request.payload;
+            console.log('user:', request.payload);
+            // Find user by email
+            const user = await User.findOne({ where: { email } });
+            console.log('user:', user);
+            if (!user) {
+                return h.response({ message: 'User not found' }).code(404);
+            }
+
+            // Compare passwords
+            const isValid = await bcrypt.compare(password, user.password);
+            if (!isValid) {
+                return h.response({ message: 'Invalid password' }).code(401);
+            }
+
+            // Generate and return JWT token
+            const token = generateToken(user);
+            return h.response({ token }).code(200);
+        },
+    });
+
+    // Protected route example
+    server.route({
+        method: 'GET',
+        path: '/protected',
+        options: {
+            auth: 'jwt', // Require JWT authentication
+        },
+        handler: (request, h) => {
+            return h.response({ message: 'You have accessed protected data!', user: request.auth.credentials });
+        },
+    });
+
+    await server.start();
+    console.log('Server running on %s', server.info.uri);
+    
+    return server;
 };
 
-process.on('unhandledRejection', (err) => {
-    console.log(err);
-    process.exit(1);
+init().catch((err) => {
+    console.error('Error starting server:', err);
 });
-
-init();
-
