@@ -24,10 +24,10 @@ jobs:
     #   run: npm test
 
     - name: Build Docker image
-      run: docker build -t your-image-name .
+      run: docker build -t pahchaan2018/networthapp .
 
     - name: Push Docker image
-      run: docker push your-image-name
+      run: docker push pahchaan2018/networthapp
       env:
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        DOCKER_USERNAME: pahchaan2018
+        DOCKER_PASSWORD: Surajs338@%
