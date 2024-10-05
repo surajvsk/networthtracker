@@ -29,5 +29,5 @@ jobs:
     - name: Push Docker image
       run: docker push pahchaan2018/networthapp
       env:
-        DOCKER_USERNAME: pahchaan2018
-        DOCKER_PASSWORD: Surajs338@%
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

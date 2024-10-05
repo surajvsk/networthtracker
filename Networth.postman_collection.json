@@ -1,0 +1,114 @@
+{
+	"info": {
+		"_postman_id": "f97d7887-ee3a-4996-8112-5010624923bc",
+		"name": "Networth",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "8656723"
+	},
+	"item": [
+		{
+			"name": "user",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwidXNlcm5hbWUiOiJzdXJhaiIsImVtYWlsIjoic3VyYWp2aXNod2FrYXJtYUBnbWFpbC5jb20iLCJpYXQiOjE3MjgxMjMxMTgsImV4cCI6MTcyODEyNjcxOH0.hEK6zRTaL3UmPHKGoLn_CROMDupe1nxPyKtbY9HG_Gg",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\":\"suraj1\",\r\n    \"password\":\"pass@123\",\r\n    \"email\":\"surajvishwakarm@gmail.com\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3000/users",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"surajvishwakarma@gmail.com\",\r\n  \"password\": \"pass@123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3000/login",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "protected",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwidXNlcm5hbWUiOiJzdXJhaiIsImVtYWlsIjoic3VyYWp2aXNod2FrYXJtYUBnbWFpbC5jb20iLCJpYXQiOjE3MjgxMjMxMTgsImV4cCI6MTcyODEyNjcxOH0.hEK6zRTaL3UmPHKGoLn_CROMDupe1nxPyKtbY9HG_Gg",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3000/protected",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"protected"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
