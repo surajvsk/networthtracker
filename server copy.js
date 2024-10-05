@@ -1,3 +1,4 @@
+// server.js
 const Hapi = require('@hapi/hapi');
 const User = require('./models/user');
 const Joi = require('joi');
@@ -6,7 +7,7 @@ const HapiAuthJwt2 = require('hapi-auth-jwt2');
 const { generateToken } = require('./utils');
 const config = require('./config');
 
-const createServer = async () => {
+const init = async () => {
     const server = Hapi.server({
         port: 3000,
         host: 'localhost',
@@ -18,14 +19,14 @@ const createServer = async () => {
     server.auth.strategy('jwt', 'jwt', {
         key: config.jwtSecret,
         validate: async (decoded) => {
-            // Additional validation can be done here
+            // You can perform additional checks here
             return { isValid: true };
         },
     });
 
     server.auth.default('jwt'); // Set the default authentication strategy
 
-    // Routes for user creation and login
+    // Define routes
     server.route({
         method: 'POST',
         path: '/users',
@@ -57,7 +58,7 @@ const createServer = async () => {
         method: 'POST',
         path: '/login',
         options: {
-            auth: false, // No JWT authentication for login
+            auth: false, // Disable JWT authentication for this route
             validate: {
                 payload: Joi.object({
                     email: Joi.string().email().required(),
@@ -67,19 +68,22 @@ const createServer = async () => {
         },
         handler: async (request, h) => {
             const { email, password } = request.payload;
-
+            console.log('user:', request.payload);
+            
             // Find user by email
             const user = await User.findOne({ where: { email } });
+            console.log('user:', user);
+            
             if (!user) {
                 return h.response({ message: 'User not found' }).code(404);
             }
-
+    
             // Compare passwords
             const isValid = await bcrypt.compare(password, user.password);
             if (!isValid) {
                 return h.response({ message: 'Invalid password' }).code(401);
             }
-
+    
             // Generate and return JWT token
             const token = generateToken(user);
             return h.response({ token }).code(200);
@@ -98,16 +102,12 @@ const createServer = async () => {
         },
     });
 
+    await server.start();
+    console.log('Server running on %s', server.info.uri);
+    
     return server;
 };
 
-// Only start the server if not in a test environment
-if (process.env.NODE_ENV !== 'test') {
-    (async () => {
-        const server = await createServer();
-        await server.start();
-        console.log('Server running on %s', server.info.uri);
-    })();
-}
-
-module.exports = { createServer }; // Export the server creation function
+init().catch((err) => {
+    console.error('Error starting server:', err);
+});
